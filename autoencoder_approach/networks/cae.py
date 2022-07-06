@@ -114,4 +114,8 @@ class Conv2dAutoEncoder(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=.003)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', .2, 2)
 
-        return [optimizer], [scheduler]
+        return {
+            'optimizer': optimizer,
+            'scheduler': scheduler,
+            'monitor': 'val_loss'
+        }
