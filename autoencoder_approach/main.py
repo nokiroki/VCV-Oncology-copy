@@ -12,6 +12,7 @@ def configure_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model', dest='model', default='cae', type=str)
+    parser.add_argument('--lr', dest='lr', default=.003, type=float)
     parser.add_argument('--dir', dest='dir', default='.\\', type=str)
     parser.add_argument('--batch', dest='batch_size', default=16, type=int)
     parser.add_argument('--epochs', dest='num_epochs', default=20, type=int)
@@ -27,9 +28,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.model == 'caeup':
-        model = ConvUp2dAutoEncoder()
+        model = ConvUp2dAutoEncoder(start_lr=args.lr)
     else:
-        model = Conv2dAutoEncoder(3, 8)
+        model = Conv2dAutoEncoder(3, 8, start_lr=args.lr)
 
     logger = pl_loggers.TensorBoardLogger('pl_logs', args.name)
     trainer = Trainer(gpus=1, max_epochs=args.num_epochs, logger=logger)

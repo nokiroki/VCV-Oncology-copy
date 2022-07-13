@@ -20,7 +20,8 @@ class Conv2dAutoEncoder(pl.LightningModule):
     def __init__(
         self,
         in_channels: int,
-        n_latent_features: int
+        n_latent_features: int,
+        start_lr: float = .003
     ):
         super().__init__()
         self.out = n_latent_features
@@ -63,6 +64,7 @@ class Conv2dAutoEncoder(pl.LightningModule):
         )
         self.decoder.apply(init_weights)
 
+        self.start_lr = start_lr
         self.train_index = 0
         self.val_index = 0
         self.final_labels = None
@@ -111,7 +113,7 @@ class Conv2dAutoEncoder(pl.LightningModule):
         pass
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=.003)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.start_lr)
         scheduler = {
             'scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', .2, 2),
             'monitor': 'val_loss'

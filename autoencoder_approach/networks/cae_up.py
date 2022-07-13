@@ -21,7 +21,7 @@ class ConvUp2dAutoEncoder(pl.LightningModule):
         self,
         in_channels: int = 3,
         n_latent_features: int = 2048,
-        dropout: float = .5
+        start_lr: float = .003
     ):
         super().__init__()
         self.out = n_latent_features
@@ -36,15 +36,12 @@ class ConvUp2dAutoEncoder(pl.LightningModule):
             nn.ReLU(),
             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2),
             nn.BatchNorm2d(256),
-            nn.Dropout(dropout),
             nn.ReLU(),
             nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=2),
             nn.BatchNorm2d(512),
-            nn.Dropout(dropout),
             nn.ReLU(),
             nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, stride=2),
             nn.BatchNorm2d(1024),
-            nn.Dropout(dropout),
             nn.ReLU(),
             nn.Conv2d(in_channels=1024, out_channels=n_latent_features, kernel_size=3, stride=2),
             nn.ReLU()
@@ -55,15 +52,12 @@ class ConvUp2dAutoEncoder(pl.LightningModule):
             nn.ReLU(),
             nn.ConvTranspose2d(in_channels=1024, out_channels=512, kernel_size=3, stride=2),
             nn.BatchNorm2d(512),
-            nn.Dropout(dropout),
             nn.ReLU(),
             nn.ConvTranspose2d(in_channels=512, out_channels=256, kernel_size=3, stride=2),
             nn.BatchNorm2d(256),
-            nn.Dropout(dropout),
             nn.ReLU(),
             nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=3, stride=2),
             nn.BatchNorm2d(128),
-            nn.Dropout(dropout),
             nn.ReLU(),
             nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=3, stride=2),
             nn.BatchNorm2d(64),
@@ -76,6 +70,7 @@ class ConvUp2dAutoEncoder(pl.LightningModule):
         )
         self.decoder.apply(init_weights)
 
+        self.start_lr = start_lr
         self.train_index = 0
         self.val_index = 0
         self.final_labels = None
@@ -124,7 +119,7 @@ class ConvUp2dAutoEncoder(pl.LightningModule):
         pass
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=.003)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.start_lr)
         scheduler = {
             'scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', .2, 2),
             'monitor': 'val_loss'
