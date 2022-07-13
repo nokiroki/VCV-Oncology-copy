@@ -1,15 +1,11 @@
-from typing import Optional
 import os
+from typing import Optional
 
-import pandas as pd
-import torch
+import cv2
 from pytorch_lightning import LightningDataModule
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS, TRAIN_DATALOADERS
-from torch.utils.data import DataLoader, Dataset, random_split
-from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.dataset import T_co
-from sklearn.preprocessing import StandardScaler
-import cv2
 from torchvision import transforms
 
 
