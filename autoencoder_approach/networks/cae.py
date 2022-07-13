@@ -81,7 +81,7 @@ class Conv2dAutoEncoder(pl.LightningModule):
         decoded_img = self.decoder(encoded_img)
         decoded_img = F.interpolate(decoded_img, x.shape[2:], mode='bilinear', align_corners=True)
         loss = torch.nn.MSELoss()(decoded_img, x)
-        return {'latent': latent, 'loss': loss}
+        return {'latent': encoded_img, 'loss': loss}
 
     def training_step(self, batch, batch_idx):
         x = batch

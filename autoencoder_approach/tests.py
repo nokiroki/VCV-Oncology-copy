@@ -1,7 +1,7 @@
 import numpy as np
 from pytorch_lightning import loggers as pl_loggers, Trainer
 
-from networks.cae import Conv2dAutoEncoder
+from networks import Conv2dAutoEncoder, ConvUp2dAutoEncoder
 from datamodules.datamodule import MelanomaDataset, MelanomaDataModule
 
 import torch
@@ -13,6 +13,46 @@ class TestConvAutoEncoder(unittest.TestCase):
 
     def setUp(self) -> None:
         self.model = Conv2dAutoEncoder(3, 8)
+        self.x = torch.randn(10, 3, 256, 256)
+
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+        self.model = self.model.to(device)
+        self.x = self.x.to(device)
+
+    def test_shapes(self) -> None:
+        with torch.no_grad():
+            x = torch.clone(self.x)
+            print('=' * 20, '\nEncoder shapes:')
+            for layer in self.model.encoder:
+                x = layer(x)
+                print(f'{layer.__class__.__name__} - {x.shape}')
+            print('=' * 20)
+
+            print('=' * 20, '\nDecoder shapes:')
+            for layer in self.model.decoder:
+                x = layer(x)
+                print(f'{layer.__class__.__name__} - {x.shape}')
+            print('=' * 20)
+
+    def test_output_shape(self) -> None:
+        with torch.no_grad():
+            img, latent = self.model(self.x)
+
+        print(f'Img shape is - {img.shape}')
+        print(f'Latent shape is - {latent.shape}')
+
+    def test_all_good(self) -> None:
+        with torch.no_grad():
+            out = self.model.predict_step(self.x)
+
+        print(out)
+
+
+class TestUpConvAutoEncoder(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.model = ConvUp2dAutoEncoder()
         self.x = torch.randn(10, 3, 256, 256)
 
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -129,7 +169,9 @@ class TestDataModules(unittest.TestCase):
 class TestLearning(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.model = Conv2dAutoEncoder(3, 8)
+        self.model_conv = Conv2dAutoEncoder(3, 8)
+        self.model_convup = ConvUp2dAutoEncoder()
+
         self.logger = pl_loggers.TensorBoardLogger('pl_logs', 'test_logs')
         self.trainer = Trainer(gpus=1, max_epochs=2, logger=self.logger)
         self.dm = MelanomaDataModule('unittest_dataset/normal_train',
@@ -137,20 +179,30 @@ class TestLearning(unittest.TestCase):
                                 'unittest_dataset/normal_val',
                                 batch_size=2)
 
-    def test_training(self) -> None:
+    def test_training_conv(self) -> None:
         try:
-            self.trainer.fit(self.model, self.dm)
-            self.trainer.test(self.model, self.dm)
+            self.trainer.fit(self.model_conv, self.dm)
+            self.trainer.test(self.model_conv, self.dm)
+        except RuntimeError:
+            print('RunTime Error. Not enough memory for testing, Quitting')
+
+    def test_training_convup(self) -> None:
+        try:
+            self.trainer.fit(self.model_convup, self.dm)
+            self.trainer.test(self.model_convup, self.dm)
         except RuntimeError:
             print('RunTime Error. Not enough memory for testing, Quitting')
 
 
 if __name__ == '__main__':
     calc_test_suit = unittest.TestSuite()
+
     calc_test_suit.addTest(unittest.makeSuite(TestConvAutoEncoder))
+    calc_test_suit.addTest(unittest.makeSuite(TestUpConvAutoEncoder))
     calc_test_suit.addTest(unittest.makeSuite(TestDataSets))
     calc_test_suit.addTest(unittest.makeSuite(TestDataModules))
     calc_test_suit.addTest(unittest.makeSuite(TestLearning))
+
     print(f'Amount of tests - {calc_test_suit.countTestCases()}')
 
     runner = unittest.TextTestRunner(verbosity=2)
