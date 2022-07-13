@@ -1,1 +1,1 @@
-from .networks import Conv2dAutoEncoder
+from .networks import Conv2dAutoEncoder, ConvUp2dAutoEncoder
